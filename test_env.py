@@ -27,6 +27,15 @@ class TestLoader(Loader):
         ti[0:SIZE, 0:SIZE] = self.rng.integers(0,10, size=[SIZE,SIZE])
         return [([ti],[to],[ei],[eo], {'desc': "just for test"})]
 
+def compare_obs(base_obs, obs):
+    for key in base_obs:
+        if key == 'object_states':
+            continue
+        assert np.allclose(obs[key], base_obs[key]), f"{key}\n{obs[key]}\n{base_obs[key]}"
+    for key in base_obs['object_states']:
+        assert np.allclose(obs['object_states'][key], base_obs['object_states'][key]), f"{key}\n{obs['object_states'][key]}\n{base_obs['object_states'][key]}"
+
+
 def test_equality():
     env = gym.make('ARCLE/FOO2ARCv2Env-v0', data_loader = TestLoader(), max_grid_size=(SIZE, SIZE), colors=10)
     base_env = gym.make('ARCLE/O2ARCv2Env-v0', data_loader = TestLoader(), max_grid_size=(SIZE, SIZE), colors=10)
@@ -34,8 +43,8 @@ def test_equality():
     obs, info = env.reset()
     base_obs, base_info = base_env.reset()
 
-    for key in base_obs:
-        assert np.allclose(obs[key], base_obs[key]), key
+
+    compare_obs(base_obs, obs)
 
     for _ in trange(1000):
         
@@ -46,33 +55,24 @@ def test_equality():
             if other_selection == 1:
                 action["selection"][np.random.randint(SIZE), np.random.randint(SIZE)] = True
         action["selection"] = action["selection"].astype(np.bool_)
+
         obs, reward, term, trunc, info = env.step(action)
 
         base_obs, base_reward, base_term, base_trunc, base_info = base_env.step(action)
 
         try:
-            for key in base_obs:
-                assert np.allclose(obs[key], base_obs[key]), f"{key}\n{obs[key]}\n{base_obs[key]}"
+            compare_obs(base_obs, obs)
+            assert reward == base_reward, f"reward: {reward}, base_reward: {base_reward}"
+            assert term == base_term
+            assert trunc == base_trunc
         except AssertionError as e:
-            if action["operation"] >= 10 and action["operation"] <= 19 and ~np.any(action["selection"]):
-                obs, info = env.reset()
-                base_obs, base_info = base_env.reset()
-                for key in base_obs:
-                    assert np.allclose(obs[key], base_obs[key])
-            else:
-                print(obs)
-                print(base_obs)
-                raise e
-                
-        assert reward == base_reward
-        assert term == base_term
-        assert trunc == base_trunc
-
+            print(action)
+            raise e
+            
         if term or trunc:
             obs, info = env.reset()
             base_obs, base_info = base_env.reset()
-            for key in base_obs:
-                assert np.allclose(obs[key], base_obs[key])
+            compare_obs(base_obs, obs)
 
     env.close()
     base_env.close()
