@@ -289,7 +289,7 @@ cdef copy(
         clip[:] = 0
         np.copyto(clip[:H, :W], inp[xmin:xmin + H, ymin:ymin + W], where=np.logical_and(inp[xmin:xmin + H, ymin:ymin + W] > 0, selection[xmin:xmin + H, ymin:ymin + W]))
     elif source == "O":
-        if xmax >= grid_dim[0] or ymax > grid_dim[1]:
+        if xmax > grid_dim[0] or ymax > grid_dim[1]:
             return clip_dim
         clip[:] = 0
         np.copyto(
