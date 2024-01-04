@@ -11,6 +11,7 @@ cpdef act(
     np.ndarray[np.uint8_t, ndim=2] inp,
     tuple[int, int] inp_dim,
     np.ndarray[np.uint8_t, ndim=2] answer,
+    tuple[int, int] answer_dim,
     np.ndarray[np.uint8_t, ndim=2] grid,
     tuple[int, int] grid_dim,
     np.ndarray[np.npy_bool, ndim=2, cast=True] selected,
@@ -86,8 +87,8 @@ cpdef act(
     elif operation == 34:
         if trials_remain > 0:
             trials_remain -= 1
-        if grid_dim[0] == answer.shape[0] and grid_dim[1] == answer.shape[1] and np.all(
-            grid[:grid_dim[0], :grid_dim[1]] == answer):
+        if grid_dim[0] == answer_dim[0] and grid_dim[1] == answer_dim[1] and np.all(
+            grid[:grid_dim[0], :grid_dim[1]] == answer[:grid_dim[0], :grid_dim[1]]):
             if trials_remain > 0:
                 terminated = 1
             reward = 1
@@ -100,7 +101,7 @@ cpdef act(
         active, object_, object_sel, object_dim, object_pos, background, rotation_parity, reward)
 
 cpdef batch_act(
-    b_inp, b_inp_dim, b_answer,
+    b_inp, b_inp_dim, b_answer, b_answer_dim,
     b_grid, b_grid_dim, b_selected, b_clip, b_clip_dim, b_terminated, b_trials_remain,
     b_active, b_object_, b_object_sel, b_object_dim, b_object_pos, b_background, b_rotation_parity,
     b_selection, b_operation):
@@ -119,25 +120,26 @@ cpdef batch_act(
     nb_object_pos = b_object_pos.copy()
     nb_background = b_background.copy()
     nb_rotation_parity = b_rotation_parity.copy()
+    reward = b_active.copy()
 
     for i, (
-        inp, inp_dim, answer, grid, grid_dim, selected, clip, clip_dim, terminated, trials_remain,
+        inp, inp_dim, answer, answer_dim, grid, grid_dim, selected, clip, clip_dim, terminated, trials_remain,
         active, object_, object_sel, object_dim, object_pos, background, rotation_parity,
         selection, operation
     ) in enumerate(zip(
-        b_inp, b_inp_dim, b_answer, b_grid, b_grid_dim, b_selected, b_clip, b_clip_dim, b_terminated, b_trials_remain,
+        b_inp, b_inp_dim, b_answer, b_answer_dim, b_grid, b_grid_dim, b_selected, b_clip, b_clip_dim, b_terminated, b_trials_remain,
         b_active, b_object_, b_object_sel, b_object_dim, b_object_pos, b_background, b_rotation_parity, 
         b_selection, b_operation)):
 
         (nb_grid[i], nb_grid_dim[i], nb_selected[i], nb_clip[i], nb_clip_dim[i], nb_terminated[i], nb_trials_remain[i],
         nb_active[i], nb_object_[i], nb_object_sel[i], nb_object_dim[i], nb_object_pos[i],
-        nb_background[i], nb_rotation_parity[i]) = act(
-            inp, inp_dim, answer, grid, grid_dim, selected, clip, clip_dim, terminated, trials_remain,
+        nb_background[i], nb_rotation_parity[i], reward[i]) = act(
+            inp, inp_dim, answer, answer_dim, grid, grid_dim, selected, clip, clip_dim, terminated, trials_remain,
             active, object_, object_sel, object_dim, object_pos, background, rotation_parity, 
             selection, operation)
 
     return (
         nb_grid, nb_grid_dim, nb_selected, nb_clip, nb_clip_dim, nb_terminated, nb_trials_remain,
         nb_active, nb_object_, nb_object_sel, nb_object_dim, nb_object_pos, 
-        nb_background, nb_rotation_parity
+        nb_background, nb_rotation_parity, reward
     )

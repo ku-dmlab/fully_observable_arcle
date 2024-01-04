@@ -13,7 +13,7 @@ class FOO2ARCv2Env(gym.Env):
                  data_loader,
                  max_grid_size: Tuple[SupportsInt, SupportsInt],
                  colors: SupportsInt,
-                 max_trial: SupportsInt=-1):
+                 max_trial: SupportsInt=3):
         self.loader = data_loader
         self.H, self.W = max_grid_size
         self.colors = colors
@@ -64,8 +64,12 @@ class FOO2ARCv2Env(gym.Env):
         input_dim = inp[subprob_index].shape
         inp = np.pad(
             inp[subprob_index], [(0, self.H - input_dim[0]), (0, self.W - input_dim[1])], constant_values=0).astype(np.uint8)
+        
+        answer_dim = ans[subprob_index].shape
+        answer = np.pad(
+            ans[subprob_index], [(0, self.H - answer_dim[0]), (0, self.W - answer_dim[1])], constant_values=0).astype(np.uint8)
 
-        return {'input': inp, 'input_dim': input_dim, 'answer': ans[subprob_index]}
+        return {'input': inp, 'input_dim': input_dim, 'answer': answer, 'answer_dim': answer_dim}
 
     def reset(self, seed=None, options={}):
         super().reset(seed=seed, options=options)
@@ -118,6 +122,7 @@ class FOO2ARCv2Env(gym.Env):
                 info['input'],
                 info['input_dim'],
                 info['answer'],
+                info['answer_dim'],
                 state['grid'],
                 state['grid_dim'],
                 state['selected'],
